@@ -1,17 +1,23 @@
 import yaml
+import asyncio
 import aiohttp
 import logging
 from aiohttp import web
 from logging.handlers import TimedRotatingFileHandler
 
 # Load YAML configuration
-async def load_config(config_file):
+def load_config(config_file):
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
-    return config['routes']
+    return config
+
+config = load_config('config.yaml')
+routes = config['routes']
+bot_token = config['bot_token']
+chat_id = config['chat_id']
 
 # Send message to Telegram
-async def send_telegram_message(bot_token, chat_id, message):
+async def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     data = {"chat_id": chat_id, "text": message}
     async with aiohttp.ClientSession() as session:
@@ -22,31 +28,31 @@ async def send_telegram_message(bot_token, chat_id, message):
             logging.error(f"Failed to send message to Telegram: {e}")
 
 # HTTP request handler
-async def handle_request(request, routes, bot_token, chat_id):
+async def handle_request(request):
     path = request.path
     ip_address = request.remote
     user_agent = request.headers.get('User-Agent', 'Unknown')
 
     # Log all incoming requests
-    log_message = f"Incoming request | Path: {path} | IP: {ip_address} | User-Agent: {user_agent}"
-    logging.info(log_message)
+    # log_message = f"Incoming request | Path: {path} | IP: {ip_address} | User-Agent: {user_agent}"
+    # logging.info(log_message)
     
     matched_route = next((route for route in routes if route['path'] == path), None)
     
     if matched_route:
         log_message = (f"Matched route | Path: {path} | Response: {matched_route['response']} | "
                        f"Code: {matched_route['response_code']} | IP: {ip_address} | "
-                       f"User-Agent: {user_agent}")
-        logging.info(log_message)
-        # await send_telegram_message(bot_token, chat_id, log_message)
+                       f"User-Agent: {user_agent} | Comment: {matched_route.get('comment', '')}")
+        logging.warning(log_message)
+        await send_telegram_message(log_message)
         
         return web.Response(
             text=matched_route['response'], 
             status=matched_route['response_code']
         )
     else:
-        log_message = f"404 Not Found | Path: {path} | IP: {ip_address} | User-Agent: {user_agent}"
-        logging.info(log_message)
+        # log_message = f"404 Not Found | Path: {path} | IP: {ip_address} | User-Agent: {user_agent}"
+        # logging.info(log_message)
         # await send_telegram_message(bot_token, chat_id, log_message)
         return web.Response(text="404 Not Found", status=404)
 
@@ -56,19 +62,22 @@ def configure_logging(log_file):
     handler.suffix = "%Y-%m-%d"
     logging.basicConfig(level=logging.INFO, handlers=[handler], format='%(asctime)s - %(message)s')
 
+async def hello(request):
+    return web.Response(text="Hello, world")
+
 # Main function to start the server
-async def run_server(config_file, bot_token, chat_id, host="0.0.0.0", port=8080, log_file='server.log'):
+def run_server(config_file, bot_token, chat_id, host="0.0.0.0", port=8080, log_file='server.log'):
     configure_logging(log_file)
-    routes = await load_config(config_file)
-    
+
     app = web.Application()
-    app.add_routes([web.get("/{tail:.*}", lambda request: handle_request(request, routes, bot_token, chat_id))])
+    app.add_routes([web.get(route["path"], handle_request) for route in routes])
+    web.run_app(app, host=host, port=port)
     
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, host, port)
-    logging.info(f"Starting server on {host}:{port}")
-    await site.start()
+    # runner = web.AppRunner(app)
+    # await runner.setup()
+    # site = web.TCPSite(runner, host, port)
+    # logging.info(f"Starting server on {host}:{port}")
+    # await site.start()
 
 if __name__ == "__main__":
     CONFIG_FILE = "config.yaml"
@@ -77,6 +86,6 @@ if __name__ == "__main__":
     LOG_FILE = "server.log"  # Log file name
 
     # Run the server
-    import asyncio
-    asyncio.run(run_server(CONFIG_FILE, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, log_file=LOG_FILE))
+    # asyncio.run(run_server(CONFIG_FILE, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, log_file=LOG_FILE))
+    run_server(CONFIG_FILE, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, log_file=LOG_FILE)
 

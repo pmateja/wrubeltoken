@@ -1,0 +1,14 @@
+chat_id: "-10028349301813"
+bot_token: "1019283749:ABCdEf1gHijKlmnfkfufysdi1134r-FFFFF"
+routes:
+  - path: "/hello"
+    response: "Hello, World!"
+    response_code: 200
+  - path: "/goodbye"
+    response: "Goodbye, World!"
+    response_code: 200
+  - path: "/reports/2024-05-21"
+    response: "Internal Server Error"
+    response_code: 500
+    comment: "someone has accessed this url!"
+
