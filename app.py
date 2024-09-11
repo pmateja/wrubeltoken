@@ -2,6 +2,7 @@ import yaml
 import asyncio
 import aiohttp
 import logging
+import os
 from aiohttp import web
 from logging.handlers import TimedRotatingFileHandler
 
@@ -13,8 +14,8 @@ def load_config(config_file):
 
 config = load_config('config.yaml')
 routes = config['routes']
-bot_token = config['bot_token']
-chat_id = config['chat_id']
+bot_token = os.environ.get("BOT_TOKEN", config.get('bot_token', ""))
+chat_id = os.environ.get("CHAT_ID", config.get('chat_id', ""))
 
 # Send message to Telegram
 async def send_telegram_message(message):

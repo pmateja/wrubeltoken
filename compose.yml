@@ -7,6 +7,10 @@ services:
       - "8080:8080"
     volumes:
       - ".:/app"
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - CHAT_ID=${CHAT_ID}
   tunnel:
     image: cloudflare/cloudflared
     restart: unless-stopped
