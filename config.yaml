@@ -1,3 +1,5 @@
+chat_id: "-1002219262205"
+bot_token: "7425383210:AAGwZl1RMRcLjbtBe7aZNYJGJJPkg-LKcBM"
 routes:
   - path: "/hello"
     response: "Hello, World!"
@@ -5,4 +7,8 @@ routes:
   - path: "/goodbye"
     response: "Goodbye, World!"
     response_code: 200
+  - path: "/reports/2024-05-21"
+    response: "Internal Server Error"
+    response_code: 500
+    comment: "joinpdf.com has accessed this url"
 
