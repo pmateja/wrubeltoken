@@ -30,7 +30,8 @@ async def send_telegram_message(message):
 # HTTP request handler
 async def handle_request(request):
     path = request.path
-    ip_address = request.remote
+    # Get the original client IP when using through CloudFlare Tunnel, else get the ip from request
+    ip_address = request.headers.get('CF-Connecting-IP', request.remote)
     user_agent = request.headers.get('User-Agent', 'Unknown')
 
     # Log all incoming requests
